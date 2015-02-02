@@ -1,6 +1,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/syscalls.h>
+#include <linux/cred.h>
 
 unsigned long **sys_call_table;
 
@@ -9,18 +10,22 @@ asmlinkage long (*ref_sys_cs3013_syscall1)(void);
 asmlinkage long (*ref_sys_close)(const char *, int, int);
 
 asmlinkage long new_sys_open(const char *filename, int flags, int mode) {
-	printk(KERN_INFO "Opening a file!\n");
+	if( current_uid().val > 1000 ){
+		printk(KERN_INFO "Opening a file!\n");
+	}
 	return ref_sys_open(filename, flags, mode);
 }
 
 asmlinkage long new_sys_close(const char *filename, int flags, int mode) {
-	printk(KERN_INFO "Closing a file!\n");
+	if( current_uid().val > 1000 ){
+		printk(KERN_INFO "Closing a file!\n");
+	}
 	return ref_sys_close(filename, flags, mode);
 }
 
 asmlinkage long new_sys_cs3013_syscall1(void) {
-	printk(KERN_INFO "\"’Hello world?!’ More like ’Goodbye, world!’ EXTERMINATE!\" -- Dalek");
-	return 0;
+		printk(KERN_INFO "\"’Hello world?!’ More like ’Goodbye, world!’ EXTERMINATE!\" -- Dalek");
+		return 0;
 }
 
 static unsigned long **find_sys_call_table(void) {
