@@ -4,5 +4,6 @@
 
 Phase 1
 
-1. Run make
-2. Run ./cs3013_syscall1_switch.c
+1. Run make all
+2. Sudo insmod cs3013_syscall1_switch.ko OR new_open.ko OR new_close.ko
+3. tail -n 1 /var/log/syslog

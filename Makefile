@@ -1,5 +1,5 @@
 
-obj-m += cs3013_syscall1_switch.o
+obj-m += cs3013_syscall1_switch.o new_open.o new_close.o
 KDIR := /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)
 
