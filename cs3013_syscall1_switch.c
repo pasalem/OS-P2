@@ -9,15 +9,19 @@ asmlinkage long (*ref_sys_open)(const char *, int, int);
 asmlinkage long (*ref_sys_cs3013_syscall1)(void);
 asmlinkage long (*ref_sys_close)(const char *, int, int);
 
+static int shouldPrint(void){
+	return (current_uid().val > 1000);
+}
+
 asmlinkage long new_sys_open(const char *filename, int flags, int mode) {
-	if( current_uid().val > 1000 ){
+	if( shouldPrint() ){
 		printk(KERN_INFO "Opening a file!\n");
 	}
 	return ref_sys_open(filename, flags, mode);
 }
 
 asmlinkage long new_sys_close(const char *filename, int flags, int mode) {
-	if( current_uid().val > 1000 ){
+	if( shouldPrint() ){
 		printk(KERN_INFO "Closing a file!\n");
 	}
 	return ref_sys_close(filename, flags, mode);
@@ -34,7 +38,7 @@ static unsigned long **find_sys_call_table(void) {
 	while (offset < ULLONG_MAX) {
 		sct = (unsigned long **)offset;
 		if (sct[__NR_close] == (unsigned long *) sys_close) {
-			printk(KERN_INFO "Interceptor: Found syscall table at address: 0x%02lX",
+			printk(KERN_INFO "Interceptor: Found syscall table at address: 0x%02lX\n",
 			(unsigned long) sct);
 			return sct;
 		}
@@ -90,7 +94,7 @@ static int __init interceptor_start(void) {
 	enable_page_protection();
 	
 	/* And indicate the load was successful */
-	printk(KERN_INFO "Loaded interceptor!");
+	printk(KERN_INFO "Loaded interceptor!\n");
 	return 0;
 }
 
@@ -108,7 +112,7 @@ static void __exit interceptor_end(void) {
 	
 	enable_page_protection();
 	
-	printk(KERN_INFO "Unloaded interceptor!");
+	printk(KERN_INFO "Unloaded interceptor!\n");
 }
 
 
