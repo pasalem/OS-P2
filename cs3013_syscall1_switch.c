@@ -4,7 +4,19 @@
 
 unsigned long **sys_call_table;
 
+asmlinkage long (*ref_sys_open)(const char *, int, int);
 asmlinkage long (*ref_sys_cs3013_syscall1)(void);
+asmlinkage long (*ref_sys_close)(const char *, int, int);
+
+asmlinkage long new_sys_open(const char *filename, int flags, int mode) {
+	printk(KERN_INFO "Opening a file!\n");
+	return ref_sys_open(filename, flags, mode);
+}
+
+asmlinkage long new_sys_close(const char *filename, int flags, int mode) {
+	printk(KERN_INFO "Closing a file!\n");
+	return ref_sys_close(filename, flags, mode);
+}
 
 asmlinkage long new_sys_cs3013_syscall1(void) {
 	printk(KERN_INFO "\"’Hello world?!’ More like ’Goodbye, world!’ EXTERMINATE!\" -- Dalek");
@@ -59,12 +71,16 @@ static int __init interceptor_start(void) {
 	}
 
 	/* Store a copy of all the existing functions */
+	ref_sys_open = (void *)sys_call_table[__NR_open];
 	ref_sys_cs3013_syscall1 = (void *)sys_call_table[__NR_cs3013_syscall1];
+	ref_sys_close = (void *)sys_call_table[__NR_close];
 
 	/* Replace the existing system calls */
 	disable_page_protection();
 
+	sys_call_table[__NR_open] = (unsigned long *)new_sys_open;
 	sys_call_table[__NR_cs3013_syscall1] = (unsigned long *)new_sys_cs3013_syscall1;
+	sys_call_table[__NR_close] = (unsigned long *)new_sys_close;
 
 	enable_page_protection();
 	
@@ -82,6 +98,8 @@ static void __exit interceptor_end(void) {
 	disable_page_protection();
 	
 	sys_call_table[__NR_cs3013_syscall1] = (unsigned long *)ref_sys_cs3013_syscall1;
+	sys_call_table[__NR_open] = (unsigned long *)ref_sys_open;
+	sys_call_table[__NR_close] = (unsigned long *)ref_sys_close;
 	
 	enable_page_protection();
 	
