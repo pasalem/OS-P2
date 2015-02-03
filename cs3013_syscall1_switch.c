@@ -7,36 +7,52 @@ unsigned long **sys_call_table;
 
 asmlinkage long (*ref_sys_cs3013_syscall1)(void);
 asmlinkage long (*ref_sys_open)(const char *, int, int);
-asmlinkage long (*ref_sys_close)(const char *, int, int);
-asmlinkage long (*ref_sys_read)(const char *, int, int);
-
-//Only print to the syslog if the user is non-root
-static int shouldPrint(void){
-	return (current_uid().val > 1000);
-}
+asmlinkage long (*ref_sys_close)(int fd);
+asmlinkage long (*ref_sys_read)(int fd, void *buf, size_t count);
 
 //Open
 asmlinkage long new_sys_open(const char *filename, int flags, int mode) {
-	if( shouldPrint() ){
-		printk(KERN_INFO "Opening a file!\n");
+	 if(current_uid().val >= 1000){
+		printk(KERN_INFO "User %d is opening: %s\n", current_uid().val, filename);
 	}
 	return ref_sys_open(filename, flags, mode);
 }
 
 //Close
-asmlinkage long new_sys_close(const char *filename, int flags, int mode) {
-	if( shouldPrint() ){
-		printk(KERN_INFO "Closing a file!\n");
+asmlinkage long new_sys_close(int fd) {
+	 if(current_uid().val >= 1000){
+		printk(KERN_INFO "User %d is closing file descriptor %d", current_uid().val, fd);
 	}
-	return ref_sys_close(filename, flags, mode);
+	return ref_sys_close(fd);
 }
 
 //Read
-asmlinkage long new_sys_read(const char *filename, int flags, int mode) {
-	if( shouldPrint() ){
-		printk(KERN_INFO "Reading a file!\n");
+asmlinkage long new_sys_read(int fd, void *buf, size_t count) {
+	int index;
+
+	if(current_uid().val >= 1000){
+		//Only check if we have 5 or more characters to read
+		if(count >= 5){
+			for(index = 0; index < (count - 5); index++){
+
+
+				if( ((char *)buf)[index + 0] == 'v'){
+					if( ((char *)buf)[index + 1] == 'i'){
+						if( ((char *)buf)[index + 2] == 'r'){
+							if( ((char *)buf)[index + 3] == 'u'){
+								if( ((char *)buf)[index + 4] == 's'){
+									printk(KERN_INFO "User %d read from file descriptor %d, but that file contained a VIRUS!!\n", current_uid().val, fd);
+								}
+							}
+						}
+					}
+				}
+
+
+			}
+		}
 	}
-	return ref_sys_read(filename, flags, mode);
+	return ref_sys_read(fd, buf, count);
 }
 
 //Print
