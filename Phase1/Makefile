@@ -1,4 +1,4 @@
-obj-m := cs3013p2.o
+obj-m := cs3013_syscall1_switch.o
 KDIR := /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)
 
@@ -9,6 +9,6 @@ clean:
 syslog:
 	tail -n 10 /var/log/syslog
 insmod:
-	sudo insmod cs3013p2.ko
+	sudo insmod cs3013_syscall1_switch.ko
 rmmod:
-	sudo rmmod cs3013p2.ko
+	sudo rmmod cs3013_syscall1_switch.ko
