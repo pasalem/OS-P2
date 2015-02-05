@@ -18,6 +18,9 @@ asmlinkage long new_sys_open(const char *filename, int flags, int mode) {
 int cs3013_syscall2(unsigned short *target_uid, int *num_pids_smited,
  int *smited_pids, long *pid_states);
 
+int cs3013_syscall3(int *num_pids_smited,
+	int *smited_pids, long *pid_states);
+
 //Close
 asmlinkage long new_sys_close(int fd) {
 	 if(current_uid().val >= 1000){
