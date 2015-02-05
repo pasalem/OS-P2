@@ -25,7 +25,7 @@ int main (int argc, char* argv[]) {
 
 
 	printf("The return values of the system calls are:\n");
-	printf("\tSmite: %ld\n", smite(&target_uid, &num_pids_smited, &smited_pids, &pid_states));
-	printf("\tUnsmite: %ld\n", unsmite(&num_pids_smited, &smited_pids, &pid_states));
+	printf("\tSmite: %ld\n", smite(&target_uid, &num_pids_smited, smited_pids, pid_states));
+	printf("\tUnsmite: %ld\n", unsmite(&num_pids_smited, smited_pids, pid_states));
 	return 0;
 }
