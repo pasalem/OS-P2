@@ -3,13 +3,47 @@
 unsigned long **sys_call_table;
 asmlinkage long (*ref_sys_cs3013_syscall2)(void);
 asmlinkage long (*ref_sys_cs3013_syscall3)(void);
+struct task_struct *current_task;
+
+//The list of tasks to iterate through
+struct task_struct *task;
+//Count how many tasks we've smited
+int index = 0;
 
 asmlinkage long smite(unsigned short *target_uid, int *num_pids_smited, int *smited_pids, long *pid_states){
-	return 0;
+
+	//Ensure user is not root
+	current_task = get_current();
+	if( current_task->real_cred->uid.val != 0 ){
+		printk("SMITE ABORTED - you must be root.\n");
+		return 0;
+	}
+
+	//Go through each task
+	for_each_process(task){
+		if(index < 100){
+			//We found a task to smite
+			if( task->real_cred->uid.val == *target_uid){
+				//Copy the pid and state into our arrays
+				smited_pids[index] = task->pid;
+				pid_states[index] = task->state;
+
+				//SMITE MUAHAH
+				task->state = TASK_UNINTERRUPTIBLE;
+			}
+
+		} else {
+			//return to user space
+		}
+	}
+
+
+
+	return 1;
 }
 
 asmlinkage long unsmite(int *num_pids_smited, int *smited_pids, long *pid_states){
-	return 0;
+	return 1;
 }
 
 static unsigned long **find_sys_call_table(void) {
