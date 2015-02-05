@@ -21,6 +21,10 @@ int main (int argc, char* argv[]) {
 	int smited_pids[num_processes];
 	long pid_states[num_processes];
 
+	if(argc < 2){
+		printf("Include a PID argument when executing the test");
+		return 0;
+	}
 	target_uid = atoi(argv[1]);
 
 
