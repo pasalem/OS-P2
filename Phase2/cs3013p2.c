@@ -1,13 +1,15 @@
 #include "cs3013p2.h"
 
 unsigned long **sys_call_table;
+asmlinkage long (*ref_sys_cs3013_syscall2)(void);
+asmlinkage long (*ref_sys_cs3013_syscall3)(void);
 
-int cs3013_syscall2(unsigned short *target_uid, int *num_pids_smited, int *smited_pids, long *pid_states){
-
+asmlinkage long smite(unsigned short *target_uid, int *num_pids_smited, int *smited_pids, long *pid_states){
+	return 0;
 }
 
-int cs3013_syscall3(int *num_pids_smited, int *smited_pids, long *pid_states){
-
+asmlinkage long unsmite(int *num_pids_smited, int *smited_pids, long *pid_states){
+	return 0;
 }
 
 static unsigned long **find_sys_call_table(void) {
@@ -64,8 +66,8 @@ static int __init interceptor_start(void) {
 	/* Replace the existing system calls */
 	disable_page_protection();
 
-	sys_call_table[__NR_cs3013_syscall2] = (unsigned long *)new_sys_cs3013_syscall2;
-	sys_call_table[__NR_cs3013_syscall3] = (unsigned long *)new_sys_cs3013_syscall3;
+	sys_call_table[__NR_cs3013_syscall2] = (unsigned long *)smite;
+	sys_call_table[__NR_cs3013_syscall3] = (unsigned long *)unsmite;
 
 	enable_page_protection();
 	
