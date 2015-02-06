@@ -3,41 +3,64 @@
 unsigned long **sys_call_table;
 asmlinkage long (*ref_sys_cs3013_syscall2)(void);
 asmlinkage long (*ref_sys_cs3013_syscall3)(void);
-struct task_struct *current_task;
 
 //The list of tasks to iterate through
 struct task_struct *task;
 //Count how many tasks we've smited
-int index = 0;
 
 asmlinkage long smite(unsigned short *target_uid, int *num_pids_smited, int *smited_pids, long *pid_states){
+	int k_index;
+	int k_smited_pids[NUMTASKS];
+	long k_pid_states[NUMTASKS];
+	struct task_struct *current_task;
+	
 
 	//Ensure user is not root
 	current_task = get_current();
 	if( current_task->real_cred->uid.val != 0 ){
-		printk("SMITE ABORTED - you must be root.\n");
+		printk(KERN_INFO "SMITE ABORTED - you must be root.\n");
 		return 0;
+	}
+
+	//Copy vars to kernel space
+	if( copy_from_user(&k_index, num_pids_smited, sizeof(num_pids_smited)) ){
+		return EFAULT;
+	}
+	if( copy_from_user(k_smited_pids, smited_pids, sizeof(int) * NUMTASKS) ){
+		return EFAULT;
+	}
+	if( copy_from_user(k_pid_states, pid_states, sizeof(long) * NUMTASKS) ){
+		return EFAULT;
 	}
 
 	//Go through each task
 	for_each_process(task){
-		if(index < 100){
+		if(k_index < NUMTASKS){
 			//We found a task to smite
-			if( task->real_cred->uid.val == *target_uid){
+			if( task->pid == *target_uid){
+				printk(KERN_INFO "SMITE - process %d\n", task->pid);
 				//Copy the pid and state into our arrays
-				smited_pids[index] = task->pid;
-				pid_states[index] = task->state;
+				k_smited_pids[k_index] = task->pid;
+				k_pid_states[k_index] = task->state;
 
-				//SMITE MUAHAH
-				task->state = TASK_UNINTERRUPTIBLE;
+				//SMITE MUAHAHAHA
+				set_task_state(task, TASK_UNINTERRUPTIBLE);
+				k_index++;
 			}
 
-		} else {
-			//return to user space
 		}
 	}
 
-
+	//Copy vars back to user space
+	if( copy_to_user(num_pids_smited, &k_index, sizeof(k_index)) ){
+		return EFAULT;
+	}
+	if( copy_to_user(smited_pids, &k_smited_pids, sizeof(int) * NUMTASKS) ){
+		return EFAULT;
+	}
+	if( copy_to_user(pid_states, &k_pid_states, sizeof(long) * NUMTASKS) ){
+		return EFAULT;
+	}
 
 	return 1;
 }

@@ -5,4 +5,5 @@
 #include <linux/cred.h>
 #include <linux/list.h>
 #include <asm/current.h>
+#define NUMTASKS 100
 
