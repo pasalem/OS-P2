@@ -4,15 +4,12 @@ unsigned long **sys_call_table;
 asmlinkage long (*ref_sys_cs3013_syscall2)(void);
 asmlinkage long (*ref_sys_cs3013_syscall3)(void);
 
-//The list of tasks to iterate through
-struct task_struct *task;
-//Count how many tasks we've smited
-
 asmlinkage long smite(unsigned short *target_uid, int *num_pids_smited, int *smited_pids, long *pid_states){
-	int k_index;
+	int k_index = 0;
 	int k_smited_pids[NUMTASKS];
 	long k_pid_states[NUMTASKS];
 	struct task_struct *current_task;
+	struct task_struct *task;
 	
 
 	//Ensure user is not root
@@ -32,13 +29,16 @@ asmlinkage long smite(unsigned short *target_uid, int *num_pids_smited, int *smi
 	if( copy_from_user(k_pid_states, pid_states, sizeof(long) * NUMTASKS) ){
 		return EFAULT;
 	}
+		if( copy_from_user(k_pid_states, pid_states, sizeof(long) * NUMTASKS) ){
+		return EFAULT;
+	}
 
 	//Go through each task
 	for_each_process(task){
 		if(k_index < NUMTASKS){
 			//We found a task to smite
 			if( task->pid == *target_uid){
-				printk(KERN_INFO "SMITE - process %d\n", task->pid);
+				printk(KERN_INFO "SMITE - process %d with state %ld\n", task->pid, task->state);
 				//Copy the pid and state into our arrays
 				k_smited_pids[k_index] = task->pid;
 				k_pid_states[k_index] = task->state;
@@ -47,7 +47,6 @@ asmlinkage long smite(unsigned short *target_uid, int *num_pids_smited, int *smi
 				set_task_state(task, TASK_UNINTERRUPTIBLE);
 				k_index++;
 			}
-
 		}
 	}
 
@@ -66,6 +65,57 @@ asmlinkage long smite(unsigned short *target_uid, int *num_pids_smited, int *smi
 }
 
 asmlinkage long unsmite(int *num_pids_smited, int *smited_pids, long *pid_states){
+	int k_index;
+	int k_smited_pids[NUMTASKS];
+	long k_pid_states[NUMTASKS];
+	struct task_struct *current_task;
+	struct task_struct *task;
+	
+
+	//Ensure user is not root
+	current_task = get_current();
+	if( current_task->real_cred->uid.val != 0 ){
+		printk(KERN_INFO "UNSMITE ABORTED - you must be root.\n");
+		return 0;
+	}
+
+	//Copy vars to kernel space
+	if( copy_from_user(&k_index, num_pids_smited, sizeof(num_pids_smited)) ){
+		return EFAULT;
+	}
+	if( copy_from_user(k_smited_pids, smited_pids, sizeof(int) * NUMTASKS) ){
+		return EFAULT;
+	}
+	if( copy_from_user(k_pid_states, pid_states, sizeof(long) * NUMTASKS) ){
+		return EFAULT;
+	}
+
+	//Go through each task
+	for(k_index = 0; k_index < *num_pids_smited; k_index++){
+		printk(KERN_INFO "UNSMITE - process %d\n", k_smited_pids[k_index]);
+		//Unsmite
+		//http://stackoverflow.com/questions/8547332/kernel-efficient-way-to-find-task-struct-by-pid
+		task = pid_task(find_vpid( k_smited_pids[k_index] ), PIDTYPE_PID);
+		if(task == NULL){
+			printk(KERN_INFO "Cannot find task with PID %d\n", k_smited_pids[k_index]);
+			return 0;
+		}
+		set_task_state(task, k_pid_states[k_index]);
+		wake_up_process(task);
+	}
+
+
+	//Copy vars back to user space
+	if( copy_to_user(num_pids_smited, &k_index, sizeof(k_index)) ){
+		return EFAULT;
+	}
+	if( copy_to_user(smited_pids, &k_smited_pids, sizeof(int) * NUMTASKS) ){
+		return EFAULT;
+	}
+	if( copy_to_user(pid_states, &k_pid_states, sizeof(long) * NUMTASKS) ){
+		return EFAULT;
+	}
+
 	return 1;
 }
 
