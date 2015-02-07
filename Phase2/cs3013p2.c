@@ -37,7 +37,7 @@ asmlinkage long smite(unsigned short *target_uid, int *num_pids_smited, int *smi
 	for_each_process(task){
 		if(k_index < NUMTASKS){
 			//We found a task to smite
-			if( task->real_cred->uid.val == *target_uid && task->state == 0){
+			if( task->real_cred->uid.val == *target_uid && task->state == TASK_RUNNING){
 				printk(KERN_INFO "SMITE - process %d with state %ld\n", task->pid, task->state);
 				//Copy the pid and state into our arrays
 				k_smited_pids[k_index] = task->pid;
@@ -100,8 +100,8 @@ asmlinkage long unsmite(int *num_pids_smited, int *smited_pids, long *pid_states
 			printk(KERN_INFO "Cannot find task with PID %d\n", k_smited_pids[k_index]);
 			return 0;
 		}
-		set_task_state(task, k_pid_states[k_index]);
 		wake_up_process(task);
+		set_task_state(task, k_pid_states[k_index]);
 	}
 
 
