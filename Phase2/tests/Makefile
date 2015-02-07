@@ -1,3 +1,7 @@
+all: 
+	make testloop
+	make test
+
 test: test.o
 	gcc -o test test.o -I.
 
